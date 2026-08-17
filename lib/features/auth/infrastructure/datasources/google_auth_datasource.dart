@@ -25,8 +25,18 @@ class GoogleAuthDataSource {
   );
 
   Future<GoogleAuthDetails> obtenerGoogleCredentials() async {
+    // Forzar limpieza de sesión cacheada previa para que Google despliegue el selector de cuentas
     try {
-      debugPrint('Iniciando GoogleSignIn nativo...');
+      if (await _googleSignIn.isSignedIn()) {
+        await _googleSignIn.signOut();
+      }
+      await _googleSignIn.disconnect();
+    } catch (e) {
+      debugPrint('Aviso al limpiar sesión de Google previa: $e');
+    }
+
+    try {
+      debugPrint('Iniciando GoogleSignIn nativo (desplegando selector de cuentas)...');
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser != null) {
         final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
@@ -50,5 +60,18 @@ class GoogleAuthDataSource {
       email: 'conductor@stepway.com',
       displayName: 'Conductor Stepway',
     );
+  }
+
+  /// Desconecta y cierra totalmente la sesión de Google para permitir seleccionar otra cuenta
+  Future<void> cerrarSesionGoogle() async {
+    try {
+      debugPrint('Desconectando sesión de GoogleSignIn...');
+      if (await _googleSignIn.isSignedIn()) {
+        await _googleSignIn.signOut();
+      }
+      await _googleSignIn.disconnect();
+    } catch (e) {
+      debugPrint('Error al desconectar GoogleSignIn: $e');
+    }
   }
 }

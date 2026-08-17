@@ -53,6 +53,8 @@ class AuthRepositoryImpl implements IAuthRepository {
     if (sesionLocal != null && sesionLocal.refreshToken.isNotEmpty) {
       await remoteDataSource.cerrarSesionServidor(sesionLocal.refreshToken);
     }
+    // Desconectar y cerrar la sesión de Google para forzar el selector de cuenta al volver a ingresar
+    await googleAuthDataSource.cerrarSesionGoogle();
     await localDataSource.eliminarSesion();
   }
 }

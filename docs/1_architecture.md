@@ -1,104 +1,78 @@
-# 📐 Arquitectura de Software: Bitácora Stepway Fleet Manager
+# 🏛️ Documento de Arquitectura y Gobernanza Técnica
 
 ## 1. Resumen Ejecutivo
-El sistema **Bitácora Stepway Fleet Manager** está diseñado bajo los principios de **Clean Architecture** (Arquitectura Limpia) y el patrón **BLoC (Business Logic Component)** en Flutter. La aplicación garantiza una estrategia **Offline-First**, permitiendo a los usuarios registrar mantenimientos, consultar métricas del vehículo (kilometraje, nivel de combustible, alertas de salud) sin depender de conectividad a internet inmediata, sincronizando los datos con la API REST nativa cuando la red esté disponible.
+El sistema **Bitácora de Mantenimiento Vehicular** está estructurado bajo los principios de **Vertical Slicing Absoluto** y **Arquitectura Limpia** por módulos. El propósito del diseño es garantizar que cada funcionalidad del negocio (Autenticación, Combustible, Mantenimiento, Vehículo, Dashboard) sea completamente independiente, cohesiva y modular. Si una de las características (slices) es removida, el sistema debe compilar perfectamente sin romper el núcleo ni las demás características.
 
 ---
 
-## 2. Diagrama de Componentes Macro (Mermaid)
+## 2. Estructura de Directorios
 
-```mermaid
-graph TD
-    subgraph Presentation Layer [Presentation Layer (Flutter UI & BLoC)]
-        DashboardPage["DashboardPage (View)"]
-        Components["Components (HeaderCard, StatMetricCard, PriorityServiceCard, HealthCard)"]
-        MantenimientoBloc["MantenimientoBloc"]
-        AuthBloc["AuthBloc (Session State)"]
-    end
+El código fuente del proyecto está organizado bajo el siguiente árbol de directorios estricto:
 
-    subgraph Domain Layer [Domain Layer (Core Business Rules)]
-        GetDashboardDataUseCase["GetDashboardDataUseCase"]
-        IniciarSesionConGoogleUseCase["IniciarSesionConGoogleUseCase"]
-        VehiculoEntity["Vehiculo (Entity)"]
-        MantenimientoEntity["Mantenimiento (Entity)"]
-        AuthTokenEntity["AuthToken (Entity)"]
-        IMantenimientoRepository["IMantenimientoRepository"]
-        IAuthRepository["IAuthRepository"]
-    end
-
-    subgraph Data Layer [Data Layer (Infrastructure & Data Sources)]
-        AuthRepositoryImpl["AuthRepositoryImpl"]
-        GoogleAuthDataSource["GoogleAuthDataSource (Google OAuth2 SDK)"]
-        AuthRemoteDataSource["AuthRemoteDataSource (Native REST Client)"]
-        AuthLocalDataSource["AuthLocalDataSource (SQLite Secure Storage)"]
-    end
-
-    DashboardPage --> Components
-    DashboardPage --> MantenimientoBloc
-    DashboardPage --> AuthBloc
-    AuthBloc --> IniciarSesionConGoogleUseCase
-    IniciarSesionConGoogleUseCase --> IAuthRepository
-    IAuthRepository <|.. AuthRepositoryImpl
-    AuthRepositoryImpl --> GoogleAuthDataSource
-    AuthRepositoryImpl --> AuthRemoteDataSource
-    AuthRepositoryImpl --> AuthLocalDataSource
-    AuthLocalDataSource --> SQLiteDB["Local SQLite DB (Offline-First Session)"]
-    AuthRemoteDataSource --> CloudflareTunnel["Cloudflare Tunnel (https://dashboard.servidor.blog)"]
-    CloudflareTunnel --> BackendOwn["Backend Propio (Node.js/Python + PostgreSQL)"]
+```
+lib/
+├── core/                    # Elementos compartidos transversalmente (Base de Datos, Configuración, Temas)
+│   ├── config/              # Gestión de variables de entorno y preferencias de la app (Moneda)
+│   ├── database/            # Helper de base de datos física SQLite local
+│   ├── services/            # Servicios de Notificación Push Locales de Alta Prioridad
+│   └── theme/               # Diseño y directrices de colores premium
+└── features/                # Rebanadas Verticales Autónomas (Modulares)
+    ├── auth/                # Dominio de Autenticación
+    ├── combustible/         # Dominio de Consumo y Autonomía Predictiva
+    ├── configuraciones/     # Módulo de Ajustes Generales
+    ├── dashboard/           # Consola de Control de Telemetría
+    ├── mantenimiento/       # Módulo de Registro y Edición de Bitácoras
+    └── vehiculo/            # Módulo de Estado y Diagnósticos
 ```
 
 ---
 
-## 3. Diagrama de Secuencia: Flujo de Autenticación Google Sign-In (Cero BaaS)
+## 3. Diagrama de Componentes (Mermaid)
+
+El siguiente diagrama ilustra la relación de acoplamiento débil entre las diferentes rebanadas verticales y el núcleo (`core/`):
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Usuario (Driver)
-    participant FlutterApp as App Flutter (BLoC)
-    participant GoogleOAuth as Google Auth Servers
-    participant LocalSQLite as Local SQLite DB
-    participant Cloudflare as Cloudflare Tunnel
-    participant Backend as Backend Propio (Node/Python)
-    participant Postgres as PostgreSQL DB
+graph TD
+    subgraph "Core Layer (Shared)"
+        DB[(SQLite Helper)]
+        Prefs[Shared Preferences]
+        Notif[Notification Service]
+        Theme[Theme & Colors]
+    end
 
-    User->>FlutterApp: Toca "Iniciar Sesión con Google"
-    FlutterApp->>GoogleOAuth: Request Google Sign-In (OAuth 2.0)
-    GoogleOAuth-->>FlutterApp: Retorna Google `id_token` (JWT firmado por Google)
-    FlutterApp->>Cloudflare: POST /api/auth/google { "id_token": "..." }
-    Cloudflare->>Backend: Forward request a Servidor Propio
-    Backend->>GoogleOAuth: Consulta claves públicas (Certs) de Google
-    GoogleOAuth-->>Backend: Devuelve Google Public Keys
-    Backend->>Backend: Verificación Criptográfica de la firma del `id_token` y `aud`
-    Backend->>Postgres: SELECT / INSERT user en tabla `users`
-    Postgres-->>Backend: User registrado / actualizado
-    Backend->>Backend: Genera JWT Propio de Sesión (HS256 / RS256)
-    Backend-->>Cloudflare: 200 OK { access_token: "JWT_PROPIO", user: {...} }
-    Cloudflare-->>FlutterApp: Recibe JWT y datos de perfil
-    FlutterApp->>LocalSQLite: Guarda JWT en `active_sessions` (Offline Persistence)
-    FlutterApp-->>User: Navega a Dashboard (Sesión Activa)
+    subgraph "Features Layer (Vertical Slices)"
+        Auth[feature: auth]
+        Comb[feature: combustible]
+        Config[feature: configuraciones]
+        Dash[feature: dashboard]
+        Maint[feature: mantenimiento]
+        Veh[feature: vehiculo]
+    end
 
-    Note over User, LocalSQLite: Modo Offline Posterior (Reinicie la App Sin Internet)
-    User->>FlutterApp: Abre la aplicación sin conexión
-    FlutterApp->>LocalSQLite: SELECT token FROM active_sessions
-    LocalSQLite-->>FlutterApp: Retorna JWT local persistido
-    FlutterApp-->>User: Acceso directo al Dashboard sin pedir login nuevamente
+    %% Relación de Consumo de Servicios Core
+    Auth --> Prefs
+    Comb --> Notif
+    Dash --> DB
+    Dash --> Prefs
+    Maint --> DB
+    Config --> Prefs
+    Veh --> DB
 ```
 
 ---
 
 ## 4. Registro de Decisiones de Arquitectura (ADR)
 
-### ADR 001: Adopción de Clean Architecture + BLoC
-* **Estado:** Aprobado
-* **Decisión:** Dividir el proyecto en tres capas fundamentales (`domain`, `data`, `presentation`) y utilizar `flutter_bloc` para la gestión de estados reactivos.
+### ADR 001: Consolidación de Vertical Slicing Absoluto
+* **Contexto:** Inicialmente el proyecto poseía carpetas globales redundantes (`lib/data`, `lib/domain`, `lib/presentation`) que propiciaban código espagueti y acoplamiento severo.
+* **Decisión:** Agrupar y encapsular todas las entidades de dominio, lógica de aplicación (BLoCs) y vistas de infraestructura por módulo de negocio bajo `lib/features/`. Borrar permanentemente las carpetas globales huérfanas.
+* **Consecuencias:**
+  * **Positivo:** Alta cohesión y bajo acoplamiento. Facilidad de mantenimiento y pruebas aisladas.
+  * **Negativo:** Mayor cantidad de carpetas internas duplicadas para dominio e infraestructura en lugar de una única carpeta general.
 
-### ADR 002: Estrategia Offline-First con Cliente HTTP Nativo
-* **Estado:** Aprobado
-* **Decisión:** `MantenimientoRepositoryImpl` y `AuthRepositoryImpl` consultarán primero la persistencia local en SQLite.
-
-### ADR 003: Autenticación Cero BaaS (No Firebase, No Supabase)
-* **Estado:** Aprobado
-* **Contexto:** Se requiere independencia total de proveedores comerciales BaaS (Firebase Auth / Supabase Auth).
-* **Decisión:** Obtener el `idToken` en la app móvil y validarlo criptográficamente en nuestro backend propio exponiéndolo a través del Túnel de Cloudflare (`https://dashboard.servidor.blog`). El servidor verifica las firmas de Google con las claves públicas de Google y emite un JWT firmado por nuestro servidor.
-* **Consecuencias:** Control absoluto de la seguridad, privacidad de datos y cero costos por usuario activo.
+### ADR 002: Persistencia Física con SQLite y Fallback de Red
+* **Contexto:** Se requiere un funcionamiento autónomo sin depender de red o servidores externos que puedan fallar en la carretera (Modo Offline-First).
+* **Decisión:** Utilizar SQLite local a través de `sqlite_database_helper.dart` como fuente de verdad inmutable. La sincronización externa de red ocurre en segundo plano a través de mapeadores robustos en la capa de infraestructura.
+* **Consecuencias:**
+  * **Positivo:** Confiabilidad absoluta bajo cualquier condición de red.
+  * **Negativo:** Mayor complejidad al escribir mapeadores de datos manuales para sincronización bidireccional.

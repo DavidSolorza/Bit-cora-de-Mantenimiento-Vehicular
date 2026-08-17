@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:stitch_stepway_fleet_manager/core/theme/app_colors.dart';
 import 'package:stitch_stepway_fleet_manager/core/theme/app_theme.dart';
@@ -18,6 +19,7 @@ import 'package:stitch_stepway_fleet_manager/features/mantenimiento/infrastructu
 import 'package:stitch_stepway_fleet_manager/features/configuraciones/infrastructure/presentation/pages/configuraciones_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stitch_stepway_fleet_manager/core/services/pdf_report_service.dart';
+import 'package:stitch_stepway_fleet_manager/core/services/notification_service.dart';
 import '../components/onboarding_guide_widget.dart';
 import '../components/expenses_chart_widget.dart';
 import '../components/trips_list_widget.dart';
@@ -44,6 +46,9 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   int _navIndex = 0;
   String _driverName = 'David';
+  bool _monitoreoActivo = false;
+
+  static const _widgetChannel = MethodChannel('com.example.bitacora/widget');
 
   @override
   void initState() {
@@ -52,9 +57,41 @@ class _DashboardPageState extends State<DashboardPage> {
           CargarDashboardEvent(vehicleId: widget.vehicleId),
         );
     _cargarNombreConductor();
+    _verificarInicioDesdeWidget();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _comprobarOnboarding();
+      NotificationService.instance.requestPermissions();
     });
+  }
+
+  Future<void> _verificarInicioDesdeWidget() async {
+    try {
+      final String? action = await _widgetChannel.invokeMethod<String>('checkWidgetLaunch');
+      if (action == 'START_MONITORING') {
+        setState(() {
+          _monitoreoActivo = true;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Monitoreo iniciado desde el Widget de Escritorio! 🚗'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        });
+      } else if (action == 'QUICK_REFUEL') {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          NuevoRegistroBottomSheet.show(
+            context,
+            vehicleId: widget.vehicleId,
+            categoriaInicial: CategoriaMantenimiento.gasolina,
+          );
+        });
+      }
+    } catch (e) {
+      debugPrint('Error leyendo widget launch state: $e');
+    }
   }
 
   Future<void> _cargarNombreConductor() async {
@@ -148,6 +185,10 @@ class _DashboardPageState extends State<DashboardPage> {
       builder: (context, state) {
         if (state is DashboardLoadedState) {
           final summary = state.summary;
+          final double promedioSalud = summary.componentesSalud.isEmpty
+              ? 100.0
+              : summary.componentesSalud.map((c) => c.porcentaje).reduce((a, b) => a + b) / summary.componentesSalud.length;
+          _actualizarMetricasWidget(summary.vehiculo.kilometrajeActual, promedioSalud.round());
           return RefreshIndicator(
             color: AppColors.primary,
             onRefresh: () async {
@@ -176,6 +217,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: HeaderVehicleCard(vehiculo: summary.vehiculo),
                     ),
                   ),
+                  const SizedBox(height: AppSpacing.sm),
+
+                  // Consola de Monitoreo Activo / Inactivo
+                  _buildMonitoreoCard(),
                   const SizedBox(height: AppSpacing.sm),
 
                   // Banner Predictivo de Combustible & Gasolinera Sugerida
@@ -702,5 +747,118 @@ class _DashboardPageState extends State<DashboardPage> {
         return const SizedBox.shrink();
       },
     );
+  }
+
+  Widget _buildMonitoreoCard() {
+    return Container(
+      padding: AppSpacing.paddingMd,
+      decoration: AppDecorations.cardDecoration(),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: _monitoreoActivo 
+                  ? Colors.green.withValues(alpha: 0.12)
+                  : AppColors.surfaceContainerHigh,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              _monitoreoActivo ? Icons.sensors : Icons.sensors_off,
+              color: _monitoreoActivo ? Colors.green : AppColors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _monitoreoActivo ? 'SISTEMA DE BITÁCORA ACTIVO' : 'SISTEMA INACTIVO',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: _monitoreoActivo ? Colors.green : AppColors.onSurface,
+                  ),
+                ),
+                Text(
+                  _monitoreoActivo 
+                      ? 'Monitoreando telemetría, velocidad y GPS...' 
+                      : 'Presiona "Iniciar" al abordar tu Renault Stepway.',
+                  style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Column(
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _monitoreoActivo ? Colors.amber.shade700 : AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _monitoreoActivo = !_monitoreoActivo;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(_monitoreoActivo 
+                          ? '¡Monitoreo activo! Telemetría vinculada.' 
+                          : 'Monitoreo finalizado.'),
+                      backgroundColor: _monitoreoActivo ? Colors.green : AppColors.primary,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: Text(
+                  _monitoreoActivo ? 'Pausar' : 'Iniciar',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              ),
+              if (!_monitoreoActivo) ...[
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: _simularAceleracionMovimiento,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      'Simular 15km/h',
+                      style: TextStyle(fontSize: 9, color: AppColors.primary, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _simularAceleracionMovimiento() async {
+    await NotificationService.instance.mostrarAlertaAltaPrioridad(
+      id: 99,
+      titulo: '¡Movimiento Detectado! 🚗💨',
+      cuerpo: 'La velocidad superó los 15 km/h. No olvides activar el sistema de bitácora para registrar tu viaje.',
+    );
+  }
+
+  Future<void> _actualizarMetricasWidget(int kilometraje, int salud) async {
+    final prefs = await SharedPreferences.getInstance();
+    // Formatear kilometraje con comas
+    final odoStr = '${kilometraje.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]},")} km';
+    await prefs.setString('odometer_value', odoStr);
+    await prefs.setString('health_value', '$salud%');
   }
 }

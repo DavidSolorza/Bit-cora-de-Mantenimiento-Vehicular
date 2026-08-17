@@ -11,6 +11,7 @@ import 'package:stitch_stepway_fleet_manager/features/mantenimiento/application/
 import 'package:stitch_stepway_fleet_manager/features/mantenimiento/application/services/reporte_export_service.dart';
 import 'package:stitch_stepway_fleet_manager/core/config/currency_manager.dart';
 import 'package:stitch_stepway_fleet_manager/core/database/sqlite_database_helper.dart';
+import 'nuevo_registro_bottom_sheet.dart';
 
 class HistorialPage extends StatefulWidget {
   final String vehicleId;

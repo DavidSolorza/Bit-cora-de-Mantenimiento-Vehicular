@@ -24,8 +24,12 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   flutter_lints: ^3.0.0
   flutter_launcher_icons: ^0.13.1
+  mocktail: ^1.0.4
+  bloc_test: ^9.1.7
 
 flutter_launcher_icons:
   android: "yes"
@@ -34,3 +38,8 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+
+  # Declarar los assets explícitamente permite al compilador
+  # hacer tree-shaking de recursos no referenciados en el código.
+  assets:
+    - assets/icon/

@@ -27,15 +27,20 @@ class NotificationService {
     );
 
     await _notificationsPlugin.initialize(initSettings);
-
-    // Solicitar permiso de notificaciones en Android 13+ (API 33+)
-    final androidImplementation = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    if (androidImplementation != null) {
-      await androidImplementation.requestNotificationsPermission();
-    }
-
     _initialized = true;
+  }
+
+  /// Solicita el permiso de notificaciones de forma no bloqueante
+  Future<void> requestPermissions() async {
+    try {
+      final androidImplementation = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImplementation != null) {
+        await androidImplementation.requestNotificationsPermission();
+      }
+    } catch (e) {
+      debugPrint('Error solicitando permisos de notificaciones: $e');
+    }
   }
 
   Future<void> mostrarAlertaAltaPrioridad({

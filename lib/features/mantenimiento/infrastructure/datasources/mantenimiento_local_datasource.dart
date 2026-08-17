@@ -35,7 +35,7 @@ class MantenimientoLocalDataSourceImpl implements IMantenimientoLocalDataSource 
       } else if (catStr == 'lavado' || catStr == 'detallado') {
         cat = CategoriaMantenimiento.lavado;
       } else {
-        cat = CategoriaMantenimiento.otros;
+        cat = CategoriaMantenimiento.taller;
       }
 
       return RegistroMantenimientoModel(

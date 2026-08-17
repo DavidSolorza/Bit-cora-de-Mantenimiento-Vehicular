@@ -38,9 +38,6 @@ class LoginPage extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.primary.withValues(alpha: 0.15),
-                filters: const [
-                  BitmapFilter.blur(50),
-                ]..removeLast(), // Evita bugs de filtros en versiones antiguas
               ),
             ),
           ),

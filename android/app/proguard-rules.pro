@@ -28,6 +28,9 @@
 -keepattributes *Annotation*
 -keepattributes SourceFile,LineNumberTable
 
+# Conservar clases de la aplicación y sus modelos
+-keep class com.example.stitch_stepway_fleet_manager.** { *; }
+
 # Evitar advertencias por clases de plataforma no incluidas
 -dontwarn javax.annotation.**
 -dontwarn org.checkerframework.**

@@ -31,8 +31,16 @@ import 'core/config/currency_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.instance.init();
-  await CurrencyManager.init();
+  try {
+    await NotificationService.instance.init();
+  } catch (e) {
+    debugPrint('Error al inicializar servicio de notificaciones: $e');
+  }
+  try {
+    await CurrencyManager.init();
+  } catch (e) {
+    debugPrint('Error al inicializar gestor de moneda: $e');
+  }
 
   // Inyección de dependencias para Dashboard
   final dashboardLocalDS = DashboardLocalDataSourceImpl();

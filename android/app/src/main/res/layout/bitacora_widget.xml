@@ -18,8 +18,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Vehículo: Renault Sandero"
-            android:textColor="#94A3B8"
+            android:text="Renault Sandero Stepway"
+            android:textColor="#64748B"
             android:textSize="10sp"
             android:textStyle="bold" />
 
@@ -27,8 +27,8 @@
             android:id="@+id/widget_odometer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Odometer: 45,200 km"
-            android:textColor="#FFFFFF"
+            android:text="Odómetro: 45,280 km"
+            android:textColor="#0F172A"
             android:textSize="13sp"
             android:textStyle="bold"
             android:layout_marginTop="2dp"/>
@@ -38,17 +38,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Salud General: 95%"
-            android:textColor="#22C55E"
+            android:textColor="#16A34A"
             android:textSize="11sp"
             android:textStyle="bold"
             android:layout_marginTop="2dp"/>
     </LinearLayout>
 
-    <!-- Línea divisoria vertical usando FrameLayout (soportado por RemoteViews) -->
+    <!-- Línea divisoria vertical -->
     <FrameLayout
         android:layout_width="1dp"
         android:layout_height="match_parent"
-        android:background="#1E293B"
+        android:background="#E2E8F0"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp" />
 
@@ -61,7 +61,7 @@
         android:gravity="center"
         android:paddingLeft="8dp">
 
-        <!-- Botón Iniciar Monitoreo -->
+        <!-- Botón Iniciar Monitoreo (Background Broadcast) -->
         <LinearLayout
             android:id="@+id/widget_btn_start"
             android:layout_width="match_parent"
@@ -69,8 +69,8 @@
             android:background="@drawable/button_background"
             android:orientation="horizontal"
             android:gravity="center"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp"
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp"
             android:clickable="true"
             android:focusable="true">
 
@@ -90,7 +90,7 @@
                 android:textStyle="bold"/>
         </LinearLayout>
 
-        <!-- Botón Tanqueo rápido (Separado por margen superior en el propio contenedor) -->
+        <!-- Botón Tanqueo Rápido (Background Broadcast) -->
         <LinearLayout
             android:id="@+id/widget_btn_refuel"
             android:layout_width="match_parent"
@@ -98,8 +98,8 @@
             android:background="@drawable/button_amber_background"
             android:orientation="horizontal"
             android:gravity="center"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp"
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp"
             android:clickable="true"
             android:focusable="true"
             android:layout_marginTop="8dp">

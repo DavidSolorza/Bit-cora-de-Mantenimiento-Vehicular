@@ -1,17 +1,17 @@
 class PrediccionCombustibleEntity {
   final double autonomiaKm;
-  final double litrosRestantes;
-  final double capacidadTanqueLitros;
-  final double rendimientoKmL;
+  final double galonesRestantes;
+  final double capacidadTanqueGalones;
+  final double rendimientoKmGal;
   final double nivelCombustibleRatio;
   final bool esAlertaReserva;
   final double umbralAlertaKm;
 
   const PrediccionCombustibleEntity({
     required this.autonomiaKm,
-    required this.litrosRestantes,
-    required this.capacidadTanqueLitros,
-    required this.rendimientoKmL,
+    required this.galonesRestantes,
+    required this.capacidadTanqueGalones,
+    required this.rendimientoKmGal,
     required this.nivelCombustibleRatio,
     required this.esAlertaReserva,
     required this.umbralAlertaKm,

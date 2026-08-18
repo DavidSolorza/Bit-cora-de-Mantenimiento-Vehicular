@@ -19,7 +19,7 @@ class HistorialPage extends StatefulWidget {
 
   const HistorialPage({
     super.key,
-    this.vehicleId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+    this.vehicleId = '40cc315c-ad6f-449e-8e16-48c5564bdc27',
     this.onProfileTap,
   });
 
@@ -463,8 +463,8 @@ class _HistorialPageState extends State<HistorialPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildTripStat(Icons.speed, 'Odómetro', '$startKm - $endKm km'),
-                      _buildTripStat(Icons.local_gas_station, 'Consumo', '${fuelLiters.toStringAsFixed(1)} L (Gasolina)'),
-                      _buildTripStat(Icons.electric_car, 'Rendimiento', '${(distance / fuelLiters).toStringAsFixed(1)} km/L'),
+                      _buildTripStat(Icons.local_gas_station, 'Consumo', '${fuelLiters.toStringAsFixed(1)} Gal (Gasolina)'),
+                      _buildTripStat(Icons.electric_car, 'Rendimiento', '${(distance / fuelLiters).toStringAsFixed(1)} km/Gal'),
                     ],
                   ),
                 ],

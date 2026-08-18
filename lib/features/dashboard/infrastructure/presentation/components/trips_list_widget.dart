@@ -161,7 +161,7 @@ class _TripsListWidgetState extends State<TripsListWidget> {
                   controller: fuelController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Gasolina Consumida (Litros)',
+                    labelText: 'Gasolina Consumida (Galones)',
                     prefixIcon: const Icon(Icons.local_gas_station, color: AppColors.primary),
                     filled: true,
                     fillColor: AppColors.background,
@@ -572,7 +572,7 @@ class _TripsListWidgetState extends State<TripsListWidget> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildMetricCell('Distancia', '+$distance km', Icons.directions_car),
-                  _buildMetricCell('Consumo', '$fuel L', Icons.local_gas_station),
+                  _buildMetricCell('Consumo', '$fuel Gal', Icons.local_gas_station),
                   _buildMetricCell('Duración', '$estDuration min', Icons.access_time),
                 ],
               ),

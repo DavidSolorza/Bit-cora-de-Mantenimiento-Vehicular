@@ -3,8 +3,9 @@ import '../../../../core/http/native_http_client.dart';
 import '../models/mantenimiento_model.dart';
 
 abstract class IMantenimientoRemoteDataSource {
-  Future<List<MantenimientoModel>> fetchHistorial(String vehicleId);
+  Future<List<MantenimientoModel>> fetchHistorial(String vehicleId, {String? categoryId});
   Future<MantenimientoModel> crearRegistro(Map<String, dynamic> body);
+  Future<List<Map<String, dynamic>>> fetchCategorias();
 }
 
 class MantenimientoRemoteDataSourceImpl implements IMantenimientoRemoteDataSource {
@@ -14,8 +15,11 @@ class MantenimientoRemoteDataSourceImpl implements IMantenimientoRemoteDataSourc
       : _httpClient = httpClient ?? NativeHttpClient();
 
   @override
-  Future<List<MantenimientoModel>> fetchHistorial(String vehicleId) async {
-    final url = '${AppConfig.apiBaseUrl}${AppConfig.endpointRegistros}?vehicle_id=$vehicleId';
+  Future<List<MantenimientoModel>> fetchHistorial(String vehicleId, {String? categoryId}) async {
+    var url = '${AppConfig.apiBaseUrl}${AppConfig.endpointRegistros}?vehicle_id=$vehicleId';
+    if (categoryId != null && categoryId.isNotEmpty) {
+      url += '&category_id=$categoryId';
+    }
     final response = await _httpClient.get(url);
     final dataList = (response['data'] as List<dynamic>?) ?? [];
 
@@ -31,5 +35,13 @@ class MantenimientoRemoteDataSourceImpl implements IMantenimientoRemoteDataSourc
     final dataJson = (response['data'] as Map<String, dynamic>?) ?? response;
 
     return MantenimientoModel.fromJson(dataJson);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchCategorias() async {
+    final url = '${AppConfig.apiBaseUrl}/api/mantenimiento/categorias';
+    final response = await _httpClient.get(url);
+    final dataList = (response['data'] as List<dynamic>?) ?? [];
+    return dataList.cast<Map<String, dynamic>>();
   }
 }

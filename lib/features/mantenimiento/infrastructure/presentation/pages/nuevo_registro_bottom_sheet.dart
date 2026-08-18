@@ -395,14 +395,56 @@ class _NuevoRegistroBottomSheetState extends State<NuevoRegistroBottomSheet> {
           );
     }
 
-    // 2. Enviar a la API PostgreSQL en la nube
+    // 2. Enviar a la API PostgreSQL en la nube con consulta previa del ID real del vehículo
     try {
+      String realVehicleId = widget.vehicleId;
+      try {
+        final vehiculosUrl = '${AppConfig.apiBaseUrl}/api/mantenimiento/vehiculos';
+        final response = await _httpClient.get(
+          vehiculosUrl,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'X-API-Key': 'core_backend_secret_key_2026',
+          },
+        );
+        final dataList = (response['data'] as List<dynamic>?) ?? [];
+        if (dataList.isNotEmpty) {
+          final firstVeh = dataList.first as Map<String, dynamic>;
+          if (firstVeh['id'] != null && (firstVeh['id'] as String).isNotEmpty) {
+            realVehicleId = firstVeh['id'] as String;
+          }
+        }
+      } catch (_) {}
+
+      String realCategoryId = '25bff32a-5c63-47b1-be0c-9a6eefa7ae3d';
+      try {
+        final catUrl = '${AppConfig.apiBaseUrl}/api/mantenimiento/categorias';
+        final responseCat = await _httpClient.get(
+          catUrl,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'X-API-Key': 'core_backend_secret_key_2026',
+          },
+        );
+        final catList = (responseCat['data'] as List<dynamic>?) ?? [];
+        if (catList.isNotEmpty) {
+          final firstCat = catList.first as Map<String, dynamic>;
+          if (firstCat['id'] != null && (firstCat['id'] as String).isNotEmpty) {
+            realCategoryId = firstCat['id'] as String;
+          }
+        }
+      } catch (_) {}
+
       final url = '${AppConfig.apiBaseUrl}${AppConfig.endpointRegistros}';
       await _httpClient.post(
         url,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'X-API-Key': 'core_backend_secret_key_2026',
+        },
         body: {
-          'vehicle_id': widget.vehicleId,
-          'category_id': '25bff32a-5c63-47b1-be0c-9a6eefa7ae3d',
+          'vehicle_id': realVehicleId,
+          'category_id': realCategoryId,
           'title': titulo,
           'description': desc,
           'cost': costo,

@@ -4,16 +4,16 @@ abstract class FuelPredictiveEvent {
 
 class EvaluarAutonomiaEvent extends FuelPredictiveEvent {
   final double nivelCombustibleRatio;
-  final double capacidadTanqueLitros;
-  final double rendimientoKmL;
+  final double capacidadTanqueGalones;
+  final double rendimientoKmGal;
   final double umbralAlertaKm;
   final double? latitudActual;
   final double? longitudActual;
 
   const EvaluarAutonomiaEvent({
     required this.nivelCombustibleRatio,
-    this.capacidadTanqueLitros = 50.0,
-    this.rendimientoKmL = 12.5,
+    this.capacidadTanqueGalones = 13.2,
+    this.rendimientoKmGal = 47.3,
     this.umbralAlertaKm = 40.0,
     this.latitudActual,
     this.longitudActual,

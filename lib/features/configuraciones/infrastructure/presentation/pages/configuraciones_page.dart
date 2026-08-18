@@ -17,7 +17,7 @@ class ConfiguracionesPage extends StatefulWidget {
   final String vehicleId;
   const ConfiguracionesPage({
     super.key,
-    this.vehicleId = 'veh-stepway-001',
+    this.vehicleId = '40cc315c-ad6f-449e-8e16-48c5564bdc27',
   });
 
   @override
@@ -35,13 +35,14 @@ class _ConfiguracionesPageState extends State<ConfiguracionesPage> {
   final TextEditingController _modeloController = TextEditingController(text: 'Sandero Stepway');
   final TextEditingController _versionController = TextEditingController(text: 'ZEN 1.6 16V');
 
-  // Lógica Predictiva de Combustible
-  final TextEditingController _tanqueController = TextEditingController(text: '50');
-  final TextEditingController _rendimientoController = TextEditingController(text: '12.5');
+  // Lógica Predictiva de Combustible en Galones
+  final TextEditingController _tanqueController = TextEditingController(text: '13.2');
+  final TextEditingController _rendimientoController = TextEditingController(text: '47.3');
   final TextEditingController _umbralReservaController = TextEditingController(text: '40');
 
   final TextEditingController _conductorController = TextEditingController(text: 'David');
 
+  bool _hasUnsavedChanges = false;
   bool _notificacionesActivas = true;
   bool _modoOfflineActivo = true;
   bool _guardando = false;
@@ -105,11 +106,13 @@ class _ConfiguracionesPageState extends State<ConfiguracionesPage> {
           _odometroController.text = ((v['current_odometer_km'] as int?) ?? 45280).toString();
           _nombreController.text = '${_marcaController.text} ${_modeloController.text}';
           
-          final cap = (v['tank_capacity_liters'] as num?)?.toDouble() ?? 50.0;
-          final eff = (v['fuel_efficiency_km_l'] as num?)?.toDouble() ?? 12.5;
+          var cap = (v['tank_capacity_liters'] as num?)?.toDouble() ?? 13.2;
+          if (cap > 40) cap = 13.2; // Convert existing default 50L to 13.2 gal
+          var eff = (v['fuel_efficiency_km_l'] as num?)?.toDouble() ?? 47.3;
+          if (eff < 20) eff = 47.3; // Convert existing default 12.5 km/L to 47.3 km/Gal
           final resKm = (v['reserve_threshold_km'] as num?)?.toDouble() ?? 40.0;
 
-          _tanqueController.text = cap.toStringAsFixed(0);
+          _tanqueController.text = cap.toStringAsFixed(1);
           _rendimientoController.text = eff.toStringAsFixed(1);
           _umbralReservaController.text = resKm.toStringAsFixed(0);
 
@@ -236,30 +239,67 @@ class _ConfiguracionesPageState extends State<ConfiguracionesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.cardWhite.withValues(alpha: 0.95),
-        elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              'Ajustes del Sistema',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-            ),
-            Text(
-              'Cuenta de Usuario, Ficha Técnica y Preferencias',
-              style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-            ),
-          ],
+    return PopScope(
+      canPop: !_hasUnsavedChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final bool? descartar = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('¿Descartar cambios?'),
+            content: const Text('Tienes cambios sin guardar en la configuración del vehículo. ¿Deseas descartarlos y salir?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar', style: TextStyle(color: AppColors.onSurfaceVariant)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Descartar'),
+              ),
+            ],
+          ),
+        );
+        if (descartar == true && mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        floatingActionButton: _hasUnsavedChanges
+            ? FloatingActionButton.extended(
+                onPressed: _guardando ? null : _guardarCambios,
+                backgroundColor: AppColors.primary,
+                icon: const Icon(Icons.save, color: Colors.white),
+                label: const Text('Guardar Cambios', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              )
+            : null,
+        appBar: AppBar(
+          backgroundColor: AppColors.cardWhite.withValues(alpha: 0.95),
+          elevation: 0,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                'Ajustes del Sistema',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+              ),
+              Text(
+                'Cuenta de Usuario, Ficha Técnica y Preferencias',
+                style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+              ),
+            ],
+          ),
         ),
-      ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          children: [
+        body: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            children: [
             // CARD DE CUENTA DE GOOGLE & AUTENTICACIÓN
             BlocBuilder<AuthBloc, AuthState>(
               builder: (context, authState) {
@@ -821,6 +861,7 @@ class _ConfiguracionesPageState extends State<ConfiguracionesPage> {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -896,6 +937,7 @@ class _ConfiguracionesPageState extends State<ConfiguracionesPage> {
 
     setState(() {
       _guardando = false;
+      _hasUnsavedChanges = false;
     });
 
     context.read<DashboardBloc>().add(

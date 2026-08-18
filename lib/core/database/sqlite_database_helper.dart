@@ -22,6 +22,17 @@ class SqliteDatabaseHelper {
     return await openDatabase(
       path,
       version: 4,
+      onOpen: (db) async {
+        await _asegurarEsquemaMantenimientos(db);
+        try {
+          await db.execute('ALTER TABLE vehicles ADD COLUMN image_url TEXT;');
+        } catch (_) {}
+        try {
+          await db.execute('ALTER TABLE vehicles ADD COLUMN tank_capacity_liters REAL DEFAULT 13.2;');
+          await db.execute('ALTER TABLE vehicles ADD COLUMN fuel_efficiency_km_l REAL DEFAULT 47.3;');
+          await db.execute('ALTER TABLE vehicles ADD COLUMN reserve_threshold_km REAL DEFAULT 40.0;');
+        } catch (_) {}
+      },
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON;');
       },
@@ -138,15 +149,16 @@ class SqliteDatabaseHelper {
       CREATE TABLE maintenance_records (
         id TEXT PRIMARY KEY NOT NULL,
         vehicle_id TEXT NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
-        category_id TEXT NOT NULL REFERENCES maintenance_categories(id) ON DELETE RESTRICT,
+        category_id TEXT REFERENCES maintenance_categories(id) ON DELETE RESTRICT,
+        category TEXT DEFAULT 'taller',
         title TEXT NOT NULL,
         description TEXT,
         cost REAL NOT NULL CHECK (cost >= 0.00),
         odometer_km INTEGER NOT NULL CHECK (odometer_km >= 0),
         performed_at TEXT NOT NULL,
         next_recommended_km INTEGER CHECK (next_recommended_km > odometer_km),
-        priority_level TEXT NOT NULL CHECK (priority_level IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
-        created_at TEXT NOT NULL
+        priority_level TEXT DEFAULT 'MEDIUM',
+        created_at TEXT
       );
     ''');
 
@@ -169,7 +181,7 @@ class SqliteDatabaseHelper {
 
   Future<void> _seedInitialData(Database db) async {
     final now = DateTime.now().toIso8601String();
-    const defaultVehicleId = 'veh-stepway-001';
+    const defaultVehicleId = '40cc315c-ad6f-449e-8e16-48c5564bdc27';
 
     // Insertar Vehículo Principal (Renault Sandero Stepway)
     await db.insert('vehicles', {
@@ -269,6 +281,67 @@ class SqliteDatabaseHelper {
     for (var record in sampleRecords) {
       await db.insert('maintenance_records', record);
     }
+  }
+
+  static Future<void> _asegurarEsquemaMantenimientos(Database db) async {
+    try {
+      final List<Map<String, dynamic>> columns =
+          await db.rawQuery('PRAGMA table_info(maintenance_records)');
+      final bool existeCategory = columns.any((col) => col['name'] == 'category');
+      if (!existeCategory) {
+        await db.execute(
+          "ALTER TABLE maintenance_records ADD COLUMN category TEXT DEFAULT 'taller';"
+        );
+      }
+    } catch (_) {}
+
+    final now = DateTime.now().toIso8601String();
+    try {
+      await db.insert('vehicles', {
+        'id': '40cc315c-ad6f-449e-8e16-48c5564bdc27',
+        'brand': 'Renault',
+        'model': 'Sandero Stepway',
+        'year': 2022,
+        'version': 'ZEN 1.6 16V',
+        'license_plate': 'BXY-492',
+        'current_odometer_km': 45280,
+        'fuel_level_ratio': 0.75,
+        'image_url': 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=800&auto=format&fit=crop',
+        'tank_capacity_liters': 13.2,
+        'fuel_efficiency_km_l': 47.3,
+        'reserve_threshold_km': 40.0,
+        'created_at': now,
+        'updated_at': now,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    } catch (_) {}
+
+    try {
+      await db.insert('vehicles', {
+        'id': 'veh-stepway-001',
+        'brand': 'Renault',
+        'model': 'Sandero Stepway',
+        'year': 2022,
+        'version': 'ZEN 1.6 16V',
+        'license_plate': 'BXY-492',
+        'current_odometer_km': 45280,
+        'fuel_level_ratio': 0.75,
+        'image_url': 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=800&auto=format&fit=crop',
+        'tank_capacity_liters': 13.2,
+        'fuel_efficiency_km_l': 47.3,
+        'reserve_threshold_km': 40.0,
+        'created_at': now,
+        'updated_at': now,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    } catch (_) {}
+
+    try {
+      await db.insert('maintenance_categories', {
+        'id': '25bff32a-5c63-47b1-be0c-9a6eefa7ae3d',
+        'name': 'Mantenimiento General',
+        'description': 'Categoría general de servicio.',
+        'created_at': now,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    } catch (_) {}
   }
 
   Future<void> close() async {

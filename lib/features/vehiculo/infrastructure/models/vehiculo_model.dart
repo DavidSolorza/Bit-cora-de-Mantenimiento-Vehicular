@@ -15,7 +15,7 @@ class VehiculoModel extends VehiculoEntity {
 
   factory VehiculoModel.fromJson(Map<String, dynamic> json) {
     return VehiculoModel(
-      id: json['id'] as String? ?? 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+      id: json['id'] as String? ?? '40cc315c-ad6f-449e-8e16-48c5564bdc27',
       marca: json['brand'] as String? ?? 'Renault',
       modelo: json['model'] as String? ?? 'Stepway',
       version: json['version'] as String? ?? 'ZEN 2024',

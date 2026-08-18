@@ -36,7 +36,7 @@ class DashboardPage extends StatefulWidget {
 
   const DashboardPage({
     super.key,
-    this.vehicleId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+    this.vehicleId = '40cc315c-ad6f-449e-8e16-48c5564bdc27',
   });
 
   @override
@@ -544,41 +544,14 @@ class _DashboardPageState extends State<DashboardPage> {
             backgroundColor: AppColors.cardWhite.withValues(alpha: 0.95),
             elevation: 0,
             titleSpacing: AppSpacing.sm,
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Hola, ',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.onSurface.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    Text(
-                      greetingName,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.onSurface,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Administra tu Sandero Stepway',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                ),
-              ],
+            title: Text(
+              'Hola, $greetingName 👋',
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                color: AppColors.onSurface,
+                letterSpacing: -0.5,
+              ),
             ),
             actions: [
               IconButton(

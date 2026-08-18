@@ -61,7 +61,7 @@ class DashboardLocalDataSourceImpl implements IDashboardLocalDataSource {
     if (_memoryCache == null) {
       _memoryCache = const DashboardSummaryModel(
         vehiculoModel: VehiculoModel(
-          id: 'veh-stepway-001',
+          id: '40cc315c-ad6f-449e-8e16-48c5564bdc27',
           marca: 'Renault',
           modelo: 'Sandero Stepway',
           version: 'ZEN 1.6 16V',

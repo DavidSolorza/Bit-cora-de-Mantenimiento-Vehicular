@@ -25,8 +25,8 @@ class FuelPredictiveBloc extends Bloc<FuelPredictiveEvent, FuelPredictiveState> 
   ) async {
     final prediccion = calculateFuelRangeUseCase.execute(
       nivelCombustibleRatio: event.nivelCombustibleRatio,
-      capacidadTanqueLitros: event.capacidadTanqueLitros,
-      rendimientoKmL: event.rendimientoKmL,
+      capacidadTanqueGalones: event.capacidadTanqueGalones,
+      rendimientoKmGal: event.rendimientoKmGal,
       umbralAlertaKm: event.umbralAlertaKm,
     );
 
